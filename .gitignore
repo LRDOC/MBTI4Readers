@@ -1,3 +1,5 @@
 # Ignores all data files in dir
 data/*
+Example Reports/*
 !data/.gitkeep
+.DS_Store
