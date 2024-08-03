@@ -1,23 +1,28 @@
 from typing import Dict, Any
 import pandas as pd
+from pandas import Series
 from sklearn.cluster import KMeans
 
 
-def cluster_readers(df: pd.DataFrame, n_clusters: int = 5) -> pd.Series:
+def cluster_readers(df: pd.DataFrame, n_clusters: int = 5, return_model: bool = False) -> KMeans | Series:
     """
     Cluster readers based on their reading preferences.
 
     Parameters:
     df (pd.DataFrame): DataFrame containing the reader profiles.
     n_clusters (int): Number of clusters to create.
+    return_model (bool): If True, return the KMeans model instead of cluster labels.
 
     Returns:
-    pd.Series: Series containing the cluster labels.
-
+    pd.Series or KMeans: Series containing the cluster labels or KMeans model.
     """
-    kmeans = KMeans(n_clusters=n_clusters)
-    clusters = kmeans.fit_predict(df)
-    return pd.Series(clusters, name='cluster')
+    kmeans = KMeans(n_clusters=n_clusters) # Initialize the KMeans model
+    kmeans.fit(df) # Fit the KMeans model
+
+    if return_model: # Return the KMeans model if specified
+        return kmeans
+    else:
+        return pd.Series(kmeans.labels_, name='cluster')
 
 
 def analyze_clusters(df: pd.DataFrame, clusters: pd.Series) -> Dict[int, Dict[str, Any]]:

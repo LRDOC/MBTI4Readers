@@ -5,6 +5,7 @@ from feature_engineering import engineer_features
 from reader_profiling import cluster_readers, analyze_clusters
 from book_rec import create_user_profile, recommend_books
 from analyze import plot_cluster_sizes, plot_genre_distribution, analyze_reading_patterns
+from cross_validation import cluster_cross_validation, recommendation_cross_validation
 
 
 def main():
@@ -35,10 +36,20 @@ def main():
         return
 
     try:
+        # Perform cross-validation for clustering
+        mean_silhouette, std_silhouette = cluster_cross_validation(book_features)
+        print(f"Clustering Cross-Validation Results:")
+        print(f"Mean Silhouette Score: {mean_silhouette:.4f} (+/- {std_silhouette:.4f})")
+
+        # Perform cross-validation for recommendations
+        mean_precision, std_precision = recommendation_cross_validation(df, book_features)
+        print(f"Recommendation Cross-Validation Results:")
+        print(f"Mean Precision: {mean_precision:.4f} (+/- {std_precision:.4f})")
+
         clusters = cluster_readers(book_features)
         print(f"Clustering completed. Number of clusters: {len(set(clusters))}")
     except Exception as e:
-        print(f"An error occurred while clustering: {e}")
+        print(f"An error occurred during cross-validation or clustering: {e}")
         print(traceback.format_exc())
         return
 
@@ -64,6 +75,7 @@ def main():
         print(f"An error occurred while plotting: {e}")
         print(traceback.format_exc())
 
+    # Mock user preferences
     try:
         user_preferences = {
             'genre': 'fantasy',
