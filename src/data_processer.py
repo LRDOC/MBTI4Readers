@@ -1,60 +1,64 @@
 import json
 import pandas as pd
+import os
 
-file_path = 'data/copy/bookMeta.json'
 
-def load_book_meta(file_path: str) -> pd.DataFrame:
-    """'
-    Load book metadata from a JSON file and return a DataFrame.
+def load_book_meta(path: str) -> pd.DataFrame:
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"The file {path} does not exist.")
 
-    Parameters:
-    file_path (str): Path to the JSON file.
-
-    Returns:
-    pd.DataFrame: DataFrame containing the book metadata.
-    """
-    with open(file_path, 'r') as f:
-        data = json.load(f)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error when reading file: {e}")
+        return None
 
     df = pd.DataFrame(data)
     return df
 
 
 def preprocess_book_meta(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Preprocess the book metadata DataFrame.
-    Parameters:
-    df (pd.DataFrame): DataFrame containing the book metadata.
-    Returns:
-    pd.DataFrame: Preprocessed DataFrame.
-    """
-    df = df.fillna('') # Replace NaN values with empty strings
+    df = df.fillna('')
 
-    # Convert list fields to strings
     list_fields = ['creators', 'characterEthnicity', 'characterGenderIdentity', 'characterRaceCulture',
                    'characterReligion', 'characterSexualOrientation', 'Awards', 'contentWarning',
                    'genre', 'historicalEvents', 'InternationalAwards', 'literaryDevices', 'modesOfWriting',
                    'subject', 'textFeatures', 'textStructure', 'topic', 'tags']
 
     for field in list_fields:
-        df[field] = df[field].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
+        if field in df.columns:
+            df[field] = df[field].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
 
-    # Convert boolean fields to int so they can be used in models
     bool_fields = ['isFiction', 'isNonFiction', 'isBlended', 'hasMultiplePov', 'hasUnreliableNarrative']
     for field in bool_fields:
-        df[field] = df[field].astype(int) # Convert boolean to int
+        if field in df.columns:
+            df[field] = df[field].astype(int)
 
     return df
 
 
 def load_and_preprocess_data(file_path: str) -> pd.DataFrame:
-    '''
-    Load and preprocess book metadata from a JSON file.
-
-    Parameters:
-    file_path (str): Path to the JSON file.
-
-    '''
+    print(f"Attempting to load data from: {os.path.abspath(file_path)}")
     df = load_book_meta(file_path)
-    df = preprocess_book_meta(df)
-    return df
+    if df is not None:
+        print(f"Successfully loaded data. Shape before preprocessing: {df.shape}")
+        df = preprocess_book_meta(df)
+        print(f"Shape after preprocessing: {df.shape}")
+        return df
+    else:
+        print("Failed to load data.")
+        return None
+
+
+if __name__ == "__main__":
+    path = '../data/copy/bookMeta.json'
+    print(f"Current working directory: {os.getcwd()}")
+    df = load_and_preprocess_data(path)
+    if df is not None:
+        print(f"Successfully loaded and preprocessed data. Final shape: {df.shape}")
+    else:
+        print("Failed to load or preprocess data.")

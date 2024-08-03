@@ -39,9 +39,13 @@ def analyze_clusters(df: pd.DataFrame, clusters: pd.Series) -> Dict[int, Dict[st
         profile = {
             'size': len(cluster_data),
             'top_genres': cluster_data['genre'].value_counts().head(3).to_dict(),
-            'avg_lexile_level': cluster_data['lexileLevel'].mean(),
-            'most_common_narrative_form': cluster_data['NarrativeForm'].mode().iloc[0],
+            'most_common_narrative_form': cluster_data['narrativeForm'].mode().iloc[0] if not cluster_data['narrativeForm'].empty else 'N/A',
         }
+
+        # Handle lexileLevel from error Column lexileLevel contains 172 NaN values. Filling with mean.
+        lexile_levels = pd.to_numeric(cluster_data['lexileLevel'], errors='coerce')
+        profile['avg_lexile_level'] = lexile_levels.mean() if not lexile_levels.empty else 'N/A'
+
         cluster_profiles[cluster] = profile
 
     return cluster_profiles

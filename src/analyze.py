@@ -1,11 +1,9 @@
-from typing import Dict, Any
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def plot_cluster_sizes(cluster_profiles: Dict[int, Dict[str, Any]]):
+def plot_cluster_sizes(cluster_profiles):
     """
     Plot the sizes of the clusters.
 
@@ -16,7 +14,9 @@ def plot_cluster_sizes(cluster_profiles: Dict[int, Dict[str, Any]]):
     Returns:
     None
     """
+
     sizes = [profile['size'] for profile in cluster_profiles.values()]
+    plt.figure(figsize=(10, 6))
     plt.bar(range(len(sizes)), sizes)
     plt.xlabel('Cluster')
     plt.ylabel('Number of readers')
@@ -24,7 +24,7 @@ def plot_cluster_sizes(cluster_profiles: Dict[int, Dict[str, Any]]):
     plt.show()
 
 
-def plot_genre_distribution(df: pd.DataFrame):
+def plot_genre_distribution(df):
     """
     Plot the distribution of genres.
 
@@ -40,11 +40,12 @@ def plot_genre_distribution(df: pd.DataFrame):
     plt.xlabel('Genre')
     plt.ylabel('Count')
     plt.title('Top 10 Genres')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
     plt.show()
 
 
-def analyze_reading_patterns(df: pd.DataFrame, clusters: pd.Series):
+def analyze_reading_patterns(df, clusters):
     """
     Analyze the reading patterns of the clusters.
 
@@ -55,10 +56,32 @@ def analyze_reading_patterns(df: pd.DataFrame, clusters: pd.Series):
     Returns:
     None
     """
+
     df['cluster'] = clusters
-    # Unused atm TODO: make a main file
-    avg_lexile_by_cluster = df.groupby('cluster')['lexileLevel'].mean()
-    plt.figure(figsize=(10, 6))
-    sns.boxplot(x='cluster', y='lexileLevel', data=df)
-    plt.title('Lexile Level Distribution by Cluster')
+
+    # Analyze lexile levels
+    df['lexileLevel'] = pd.to_numeric(df['lexileLevel'], errors='coerce')
+    valid_lexile = df[df['lexileLevel'].notna()]
+
+    if not valid_lexile.empty:
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(x='cluster', y='lexileLevel', data=valid_lexile)
+        plt.title('Lexile Level Distribution by Cluster')
+        plt.show()
+    else:
+        print("No valid Lexile levels found for analysis.")
+
+    # Analyze fiction vs non-fiction
+    fiction_ratio = df.groupby('cluster')[['isFiction', 'isNonFiction']].mean()
+    fiction_ratio.plot(kind='bar', stacked=True, figsize=(10, 6))
+    plt.title('Fiction vs Non-Fiction Ratio by Cluster')
+    plt.xlabel('Cluster')
+    plt.ylabel('Ratio')
+    plt.legend(['Fiction', 'Non-Fiction'])
+    plt.tight_layout()
     plt.show()
+
+    # Analyze top genres per cluster
+    top_genres = df.groupby('cluster')['genre'].apply(lambda x: x.value_counts().nlargest(3).index.tolist())
+    for cluster, genres in top_genres.items():
+        print(f"Cluster {cluster} top genres: {', '.join(genres)}")
